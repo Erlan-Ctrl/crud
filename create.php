@@ -2,28 +2,39 @@
 
 require_once __DIR__ . '/../conexao.php';
 
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-$sql = 'INSERT INTO usuarios (name, username, password) VALUES (:name, :username, :password)';
 
-$stmt = $pdo->prepare($sql);
+    $_name = trim($_POST['name'] ?? '');
+    $_username = trim($_POST['username'] ?? '');
+    $_password = $_POST['password'] ?? '';
 
-$_name = $_POST[ 'name'] ?? '';
-$_username = $_POST[ 'username'] ?? ''; 
-$_password = $_POST[ 'password'] ?? '';
+    if (empty($_name) || empty($_username) || empty($_password)) {
+        echo "Todos os campos são obrigatórios.";
+        exit;
+    }
 
-$stmt->bindParam(':name', $_name);
-$stmt->bindParam(':username', $_username);
-$stmt->bindParam(':password', $_password);
+    $sqlCheck = "SELECT COUNT(*) FROM usuarios WHERE username = :username";
+    $stmtCheck = $pdo->prepare($sqlCheck);
+    $stmtCheck->bindParam(':username', $_username);
+    $stmtCheck->execute();
+    $count = $stmtCheck->fetchColumn();
 
-$stmt->execute();
+    if ($count > 0) {
+        echo "Erro: Usuário já existe.";
+        exit;
+    }
 
-if ($stmt->rowCount() > 0) {
-    echo "Usuário inserido com sucesso!";
-} else {
-    echo "Nenhum usuário inserido (provavelmente já existe).";
+    $sql = 'INSERT INTO usuarios (name, username, password) VALUES (:name, :username, :password)';
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindParam(':name', $_name);
+    $stmt->bindParam(':username', $_username);
+    $stmt->bindParam(':password', $_password);
+
+    
+    if ($stmt->execute()) {
+        echo "Usuário inserido com sucesso!";
+    } else {
+        echo "Erro ao inserir usuário.";
+    }
 }
-
-}
-
 ?>
